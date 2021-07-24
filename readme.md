@@ -1,5 +1,7 @@
 # {{project-name}}
 
+Usage: `cargo generate --git https://github.com/dotcypress/placebo-template.git`
+
 ## License
 
 Licensed under either of
