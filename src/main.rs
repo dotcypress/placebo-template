@@ -18,15 +18,21 @@ use hal::stm32;
 use hal::timer::*;
 
 #[rtic::app(device = hal::stm32, peripherals = true)]
-const APP: () = {
-    struct Resources {
+mod app {
+    use super::*;
+
+    #[shared]
+    struct Shared {}
+
+    #[local]
+    struct Local {
         led: PC15<Output<OpenDrain>>,
         timer: Timer<stm32::TIM2>,
         uart: Serial<stm32::USART2, BasicConfig>,
     }
 
     #[init]
-    fn init(ctx: init::Context) -> init::LateResources {
+    fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
         defmt::info!("init");
         let mut rcc = ctx.device.RCC.constrain();
 
@@ -42,18 +48,18 @@ const APP: () = {
         uart.write_str("starting...\r\n").ok();
 
         let mut timer = ctx.device.TIM2.timer(&mut rcc);
-        timer.start(2.hz());
+        timer.start(4.hz());
         timer.listen();
 
         let led = port_c.pc15.into_open_drain_output();
 
         defmt::info!("init completed");
-        init::LateResources { timer, led, uart }
+        (Shared {}, Local { timer, led, uart }, init::Monotonics())
     }
 
-    #[task(binds = TIM2, resources = [timer, led, uart])]
+    #[task(binds = TIM2, local = [timer, led, uart])]
     fn timer_tick(ctx: timer_tick::Context) {
-        let timer_tick::Resources { led, timer, uart } = ctx.resources;
+        let timer_tick::LocalResources { led, timer, uart } = ctx.local;
 
         led.toggle().ok();
         if led.is_set_high().unwrap_or_default() {
@@ -73,4 +79,4 @@ const APP: () = {
             cortex_m::asm::nop();
         }
     }
-};
+}
