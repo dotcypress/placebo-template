@@ -2,81 +2,69 @@
 #![no_main]
 #![deny(warnings)]
 
-extern crate cortex_m;
 extern crate cortex_m_rt as rt;
 extern crate panic_halt;
-extern crate rtic;
 extern crate stm32g0xx_hal as hal;
 
-use defmt_rtt as _;
+use hal::{gpio::*, prelude::*, serial, stm32, timer::*};
+use ushell::{autocomplete, history::LRUHistory, UShell};
 
-use core::fmt::Write;
-use hal::gpio::{gpioc::*, *};
-use hal::prelude::*;
-use hal::serial::*;
-use hal::stm32;
-use hal::timer::*;
+mod shell;
 
 #[rtic::app(device = hal::stm32, peripherals = true)]
 mod app {
     use super::*;
 
-    #[shared]
-    struct Shared {}
-
     #[local]
     struct Local {
-        led: PC15<Output<OpenDrain>>,
+        led: gpioc::PC15<Output<OpenDrain>>,
+        shell: shell::Shell,
+    }
+
+    #[shared]
+    struct Shared {
         timer: Timer<stm32::TIM2>,
-        uart: Serial<stm32::USART2, BasicConfig>,
     }
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        defmt::info!("init");
         let mut rcc = ctx.device.RCC.constrain();
 
         let port_a = ctx.device.GPIOA.split(&mut rcc);
         let port_c = ctx.device.GPIOC.split(&mut rcc);
 
-        let uart_cfg = BasicConfig::default().baudrate(115_200.bps());
-        let mut uart = ctx
-            .device
-            .USART2
-            .usart(port_a.pa2, port_a.pa3, uart_cfg, &mut rcc)
-            .expect("Failed to init serial port");
-        uart.write_str("starting...\r\n").ok();
+        let led = port_c.pc15.into();
 
         let mut timer = ctx.device.TIM2.timer(&mut rcc);
         timer.start(4.hz());
         timer.listen();
 
-        let led = port_c.pc15.into_open_drain_output();
+        let uart_cfg = serial::BasicConfig::default().baudrate(115_200.bps());
+        let mut uart = ctx
+            .device
+            .USART2
+            .usart(port_a.pa2, port_a.pa3, uart_cfg, &mut rcc)
+            .expect("Failed to init serial port");
+        uart.listen(serial::Event::Rxne);
 
-        defmt::info!("init completed");
-        (Shared {}, Local { timer, led, uart }, init::Monotonics())
+        let shell = UShell::new(
+            uart,
+            autocomplete::StaticAutocomplete(shell::AUTOCOMPLETE),
+            LRUHistory::default(),
+        );
+
+        (Shared { timer }, Local { led, shell }, init::Monotonics())
     }
 
-    #[task(binds = TIM2, local = [timer, led, uart])]
-    fn timer_tick(ctx: timer_tick::Context) {
-        let timer_tick::LocalResources { led, timer, uart } = ctx.local;
-
-        led.toggle().ok();
-        if led.is_set_high().unwrap_or_default() {
-            defmt::info!("tick");
-            uart.write_str("tick\r\n").ok();
-        } else {
-            defmt::info!("tock");
-            uart.write_str("tock\r\n").ok();
-        }
-
-        timer.clear_irq();
+    #[task(binds = USART2, local = [shell], shared = [timer])]
+    fn uart_rx(ctx: uart_rx::Context) {
+        let mut env = ctx.shared;
+        ctx.local.shell.spin(&mut env).ok();
     }
 
-    #[idle]
-    fn idle(_: idle::Context) -> ! {
-        loop {
-            cortex_m::asm::nop();
-        }
+    #[task(binds = TIM2, local = [led], shared = [timer])]
+    fn timer_tick(mut ctx: timer_tick::Context) {
+        ctx.local.led.toggle().ok();
+        ctx.shared.timer.lock(|timer| timer.clear_irq());
     }
 }
