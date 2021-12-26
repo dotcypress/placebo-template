@@ -1,6 +1,6 @@
 use crate::*;
 use core::fmt::Write;
-use rtic::Mutex;
+use rtic::*;
 use ushell::*;
 
 pub const CMD_MAX_LEN: usize = 32;
@@ -73,11 +73,8 @@ impl Environment<Uart, Autocomplete, History, (), { CMD_MAX_LEN }> for Env<'_> {
     }
 
     fn control(&mut self, shell: &mut Shell, code: u8) -> EnvResult {
-        match code {
-            control::CTRL_B => {
-                shell.bell()?;
-            }
-            _ => {}
+        if code == control::CTRL_B {
+            shell.bell()?;
         }
         Ok(())
     }
