@@ -17,7 +17,7 @@ mod app {
 
     #[local]
     struct Local {
-        led: gpioc::PC15<Output<OpenDrain>>,
+        led: gpiob::PB3<Output<OpenDrain>>,
         shell: shell::Shell,
     }
 
@@ -31,19 +31,19 @@ mod app {
         let mut rcc = ctx.device.RCC.constrain();
 
         let port_a = ctx.device.GPIOA.split(&mut rcc);
-        let port_c = ctx.device.GPIOC.split(&mut rcc);
+        let port_b = ctx.device.GPIOB.split(&mut rcc);
 
-        let led = port_c.pc15.into();
+        let led = port_b.pb3.into();
 
         let mut timer = ctx.device.TIM2.timer(&mut rcc);
-        timer.start(4.hz());
+        timer.start(250.millis());
         timer.listen();
 
         let uart_cfg = serial::BasicConfig::default().baudrate(115_200.bps());
         let mut uart = ctx
             .device
             .USART2
-            .usart(port_a.pa2, port_a.pa3, uart_cfg, &mut rcc)
+            .usart((port_a.pa2, port_a.pa3), uart_cfg, &mut rcc)
             .expect("Failed to init serial port");
         uart.listen(serial::Event::Rxne);
 

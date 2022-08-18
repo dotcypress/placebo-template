@@ -1,5 +1,6 @@
 use crate::*;
 use core::fmt::Write;
+use hal::time::Hertz;
 use rtic::*;
 use ushell::*;
 
@@ -18,7 +19,8 @@ impl Env<'_> {
     fn blink_cmd(&mut self, shell: &mut Shell, args: &str) -> ShellResult<Uart> {
         match btoi::btoi::<u32>(args.as_bytes()) {
             Ok(freq) if freq <= 1_000_000 => {
-                self.timer.lock(|timer| timer.start((freq * 2).hz()));
+                let freq = Hertz::Hz(freq * 2);
+                self.timer.lock(|timer| timer.start(freq.into_duration()));
                 shell.write_str("\r\n")?;
             }
             _ => write!(shell, "\r\nunsupported blink frequency: \"{}\"\r\n", args)?,
