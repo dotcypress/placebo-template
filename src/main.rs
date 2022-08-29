@@ -39,7 +39,7 @@ mod app {
         let led = port_b.pb3.into_open_drain_output_in_state(PinState::High);
 
         let mut timer = ctx.device.TIM16.timer(&mut rcc);
-        timer.start(20.millis());
+        timer.start(50.millis());
         timer.listen();
 
         defmt::info!("init completed");
@@ -59,7 +59,7 @@ mod app {
     fn timer_tick(ctx: timer_tick::Context) {
         let timer_tick::LocalResources { timer, led, frame } = ctx.local;
 
-        let mask = 0b10001;
+        let mask = 0b1001;
         if *frame & mask == mask {
             led.set_low().ok();
         } else {
