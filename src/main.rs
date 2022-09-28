@@ -2,7 +2,6 @@
 #![no_main]
 #![deny(warnings)]
 
-extern crate cortex_m_rt as rt;
 extern crate panic_halt;
 extern crate stm32g0xx_hal as hal;
 
