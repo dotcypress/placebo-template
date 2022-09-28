@@ -2,8 +2,6 @@
 #![no_main]
 #![deny(warnings)]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
 extern crate panic_halt;
 extern crate rtic;
 extern crate stm32g0xx_hal as hal;
@@ -73,7 +71,7 @@ mod app {
     #[idle]
     fn idle(_: idle::Context) -> ! {
         loop {
-            cortex_m::asm::nop();
+            rtic::export::nop();
         }
     }
 }
