@@ -8,7 +8,7 @@ extern crate stm32g0xx_hal as hal;
 
 use defmt_rtt as _;
 
-use hal::gpio::{gpiob::*, *};
+use hal::gpio::{gpioc::*, *};
 use hal::prelude::*;
 use hal::stm32;
 use hal::timer::*;
@@ -23,7 +23,7 @@ mod app {
     #[local]
     struct Local {
         frame: usize,
-        led: PB3<Output<OpenDrain>>,
+        led: PC15<Output<OpenDrain>>,
         timer: Timer<stm32::TIM16>,
     }
 
@@ -33,8 +33,8 @@ mod app {
 
         let mut rcc = ctx.device.RCC.constrain();
 
-        let port_b = ctx.device.GPIOB.split(&mut rcc);
-        let led = port_b.pb3.into_open_drain_output_in_state(PinState::High);
+        let port_c = ctx.device.GPIOC.split(&mut rcc);
+        let led = port_c.pc15.into_open_drain_output_in_state(PinState::High);
 
         let mut timer = ctx.device.TIM16.timer(&mut rcc);
         timer.start(50.millis());
