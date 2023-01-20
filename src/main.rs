@@ -1,17 +1,17 @@
 #![no_std]
 #![no_main]
-#![deny(warnings)]
+// #![deny(warnings)]
 
 extern crate panic_halt;
 extern crate rtic;
-extern crate stm32g0xx_hal as hal;
+extern crate stm32c0xx_hal as hal;
 
 use defmt_rtt as _;
 
 use hal::gpio::{gpioa::*, *};
 use hal::prelude::*;
 use hal::stm32;
-use hal::timer::*;
+// use hal::timer::*;
 
 #[rtic::app(device = hal::stm32, peripherals = true)]
 mod app {
@@ -24,28 +24,34 @@ mod app {
     struct Local {
         frame: usize,
         led: PA0<Output<OpenDrain>>,
-        timer: Timer<stm32::TIM16>,
+        // timer: Timer<stm32::TIM16>,
     }
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        defmt::info!("init");
+        // defmt::info!("init");
 
         let mut rcc = ctx.device.RCC.constrain();
 
         let port_a = ctx.device.GPIOA.split(&mut rcc);
-        let led = port_a.pa0.into_open_drain_output_in_state(PinState::High);
+        let mut led = port_a.pa0.into_open_drain_output_in_state(PinState::High);
 
-        let mut timer = ctx.device.TIM16.timer(&mut rcc);
-        timer.start(50.millis());
-        timer.listen();
+        loop {
+            led.toggle().unwrap();
+            for _ in 0..1_000_00 {
+                hal::cortex_m::asm::nop();
+            }
+        }
+        // let mut timer = ctx.device.TIM16.timer(&mut rcc);
+        // timer.start(50.millis());
+        // timer.listen();
 
-        defmt::info!("init completed");
+        // defmt::info!("init completed");
 
         (
             Shared {},
             Local {
-                timer,
+                // timer,
                 led,
                 frame: 0,
             },
@@ -53,20 +59,20 @@ mod app {
         )
     }
 
-    #[task(binds = TIM16, local = [timer, led, frame])]
-    fn timer_tick(ctx: timer_tick::Context) {
-        let timer_tick::LocalResources { timer, led, frame } = ctx.local;
+    // #[task(binds = TIM16, local = [timer, led, frame])]
+    // fn timer_tick(ctx: timer_tick::Context) {
+    //     let timer_tick::LocalResources { timer, led, frame } = ctx.local;
 
-        let mask = 0b1001;
-        if *frame & mask == mask {
-            led.set_low().ok();
-        } else {
-            led.set_high().ok();
-        }
+    //     let mask = 0b1001;
+    //     if *frame & mask == mask {
+    //         led.set_low().ok();
+    //     } else {
+    //         led.set_high().ok();
+    //     }
 
-        *frame += 1;
-        timer.clear_irq();
-    }
+    //     *frame += 1;
+    //     timer.clear_irq();
+    // }
 
     #[idle]
     fn idle(_: idle::Context) -> ! {

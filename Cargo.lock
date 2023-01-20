@@ -291,7 +291,7 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "panic-halt",
- "stm32g0xx-hal",
+ "stm32c0xx-hal",
 ]
 
 [[package]]
@@ -388,28 +388,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
-name = "stm32g0"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfc2ac544cea741c92a501bfd027d197354cd22ee92b439aea26d2ee0b55bcd7"
+name = "stm32c0"
+version = "0.15.1"
 dependencies = [
- "bare-metal 1.0.0",
  "cortex-m",
  "cortex-m-rt",
+ "critical-section",
  "vcell",
 ]
 
 [[package]]
-name = "stm32g0xx-hal"
-version = "0.1.5"
-source = "git+https://github.com/stm32-rs/stm32g0xx-hal#ece8f8747fc10fc02384bbcc0a7ed08286a76905"
+name = "stm32c0xx-hal"
+version = "0.0.0"
 dependencies = [
  "bare-metal 1.0.0",
  "cortex-m",
  "embedded-hal",
  "fugit",
  "nb 1.0.0",
- "stm32g0",
+ "stm32c0",
  "void",
 ]
 
